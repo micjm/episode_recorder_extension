@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Episode Recorder</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="title">Episode Recorder</div>
+        <div id="statusPill" class="pill pill-off">OFF</div>
+      </div>
+
+      <div class="meta">
+        <div class="kv"><span class="k">Episode:</span> <span class="v mono" id="episodeId">—</span></div>
+        <div class="kv"><span class="k">Steps:</span> <span class="v mono" id="stepCount">0</span></div>
+      </div>
+
+      <div class="controls">
+        <button id="btnStart" class="btn btn-primary">Start recording</button>
+        <button id="btnStop" class="btn" disabled>Stop</button>
+      </div>
+
+      <div class="controls">
+        <button id="btnExport" class="btn btn-secondary" disabled>Export episode JSON</button>
+        <button id="btnClear" class="btn btn-danger">Clear</button>
+      </div>
+
+      <div class="options">
+        <label><input type="checkbox" id="optScreenshots" checked /> Capture screenshots (viewport)</label>
+        <label><input type="checkbox" id="optDomState" checked /> Capture DOM state (visible interactables list)</label>
+      </div>
+
+      <div class="hint">
+        <div class="hint-title">Notes</div>
+        <ul>
+          <li>This is a demo recorder. JSON includes base64 screenshots (can get large).</li>
+          <li>Works best on normal websites (not chrome:// pages).</li>
+          <li>Captures click / input / select / scroll / key(Enter/Escape) events.</li>
+        </ul>
+      </div>
+
+      <div class="footer mono" id="lastMessage"></div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
