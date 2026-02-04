@@ -133,6 +133,18 @@ async function broadcastEnabled(enabled) {
   }
 }
 
+async function ensureContentScript(tabId) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ["content.js"]
+    });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
+
 async function getActiveTab() {
   const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
   return tab || null;
@@ -186,12 +198,21 @@ async function startRecording(options) {
   const st = await getSettings();
   const mergedOptions = { ...(st?.options || {}), ...(options || {}) };
 
+  let lastMessage = "Recording started.";
+  const activeTab = await getActiveTab();
+  if (activeTab?.id) {
+    const injected = await ensureContentScript(activeTab.id);
+    if (!injected.ok) {
+      lastMessage = `Recording started, but could not access the active tab: ${injected.error}`;
+    }
+  }
+
   await setSettings({
     isRecording: true,
     episodeId,
     startedAt: Date.now(),
     stepCount: 0,
-    lastMessage: "Recording started.",
+    lastMessage,
     options: mergedOptions
   });
 
