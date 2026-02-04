@@ -133,6 +133,11 @@ async function broadcastEnabled(enabled) {
   }
 }
 
+function isInjectableUrl(url) {
+  if (!url) return false;
+  return /^(https?|file):/i.test(url);
+}
+
 async function ensureContentScript(tabId) {
   try {
     await chrome.scripting.executeScript({
@@ -143,6 +148,23 @@ async function ensureContentScript(tabId) {
   } catch (e) {
     return { ok: false, error: String(e) };
   }
+}
+
+async function ensureContentScriptsInAllTabs() {
+  const tabs = await chrome.tabs.query({});
+  let injected = 0;
+  let skipped = 0;
+  let failed = 0;
+  for (const t of tabs) {
+    if (!t.id || !isInjectableUrl(t.url)) {
+      skipped++;
+      continue;
+    }
+    const resp = await ensureContentScript(t.id);
+    if (resp.ok) injected++;
+    else failed++;
+  }
+  return { injected, skipped, failed };
 }
 
 async function getActiveTab() {
@@ -199,12 +221,9 @@ async function startRecording(options) {
   const mergedOptions = { ...(st?.options || {}), ...(options || {}) };
 
   let lastMessage = "Recording started.";
-  const activeTab = await getActiveTab();
-  if (activeTab?.id) {
-    const injected = await ensureContentScript(activeTab.id);
-    if (!injected.ok) {
-      lastMessage = `Recording started, but could not access the active tab: ${injected.error}`;
-    }
+  const injectSummary = await ensureContentScriptsInAllTabs();
+  if (injectSummary.failed > 0) {
+    lastMessage = `Recording started. Injected content script into ${injectSummary.injected} tab(s); failed on ${injectSummary.failed}.`;
   }
 
   await setSettings({
@@ -219,7 +238,7 @@ async function startRecording(options) {
   await setBadge(true);
   await broadcastEnabled(true);
 
-  return { episodeId, stepCount: 0, lastMessage: "Recording started." };
+  return { episodeId, stepCount: 0, lastMessage };
 }
 
 async function stopRecording() {

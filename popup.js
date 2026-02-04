@@ -2,7 +2,11 @@
 const $ = (id) => document.getElementById(id);
 
 async function send(msg) {
-  return await chrome.runtime.sendMessage(msg);
+  try {
+    return await chrome.runtime.sendMessage(msg);
+  } catch (error) {
+    return { error: String(error), lastMessage: String(error) };
+  }
 }
 
 function setStatus(isRecording) {
@@ -40,20 +44,24 @@ $("btnStart").addEventListener("click", async () => {
     captureDomState: $("optDomState").checked
   };
   const resp = await send({type: "RECORDER_START", options});
-  setMeta(resp);
+  setMeta(resp || {});
+  if (resp?.error) {
+    setStatus(false);
+    return;
+  }
   setStatus(true);
 });
 
 $("btnStop").addEventListener("click", async () => {
   const resp = await send({type: "RECORDER_STOP"});
-  setMeta(resp);
+  setMeta(resp || {});
   setStatus(false);
 });
 
 $("btnClear").addEventListener("click", async () => {
   const resp = await send({type: "RECORDER_CLEAR"});
-  setMeta(resp);
-  setStatus(!!resp.isRecording);
+  setMeta(resp || {});
+  setStatus(!!resp?.isRecording);
 });
 
 $("btnExport").addEventListener("click", async () => {
@@ -79,18 +87,26 @@ $("btnExport").addEventListener("click", async () => {
 });
 
 $("optScreenshots").addEventListener("change", async () => {
-  await send({type: "RECORDER_SET_OPTIONS", options: {
+  const resp = await send({type: "RECORDER_SET_OPTIONS", options: {
     captureScreenshots: $("optScreenshots").checked,
     captureDomState: $("optDomState").checked
   }});
+  if (resp?.error) {
+    setMeta(resp);
+    return;
+  }
   refresh();
 });
 
 $("optDomState").addEventListener("change", async () => {
-  await send({type: "RECORDER_SET_OPTIONS", options: {
+  const resp = await send({type: "RECORDER_SET_OPTIONS", options: {
     captureScreenshots: $("optScreenshots").checked,
     captureDomState: $("optDomState").checked
   }});
+  if (resp?.error) {
+    setMeta(resp);
+    return;
+  }
   refresh();
 });
 
