@@ -116,7 +116,9 @@ async function init() {
     });
   }
 }
-await init();
+init().catch(() => {
+  // ignore init errors; extension will retry on next access
+});
 
 async function setBadge(isRecording) {
   try {
